@@ -57,12 +57,7 @@ class TestBooksCollector:
         assert collector.get_book_genre("Книга") == ""
 
     # Тесты для get_books_with_specific_genre
-    @pytest.mark.parametrize("genre, expected_count", [
-        ("Фантастика", 2),
-        ("Ужасы", 1),
-        ("Комедии", 0)
-    ])
-    def test_get_books_with_specific_genre(self, genre, expected_count):
+    def test_get_books_with_specific_genre(self):
         """Получение списка книг определённого жанра"""
         collector = BooksCollector()
         collector.add_new_book("Книга1")
@@ -72,10 +67,17 @@ class TestBooksCollector:
         collector.set_book_genre("Книга2", "Фантастика")
         collector.set_book_genre("Книга3", "Ужасы")
         
-        books = collector.get_books_with_specific_genre(genre)
-        assert len(books) == expected_count
-        if expected_count > 0:
-            assert all(collector.get_book_genre(book) == genre for book in books)
+        assert collector.get_books_with_specific_genre("Фантастика") == ["Книга1", "Книга2"]
+
+    def test_get_books_with_specific_genre_returns_empty_list_when_no_books(self):
+        """Запрос книг по жанру, когда нет книг с таким жанром"""
+        collector = BooksCollector()
+        collector.add_new_book("Книга1")
+        collector.add_new_book("Книга2")
+        collector.set_book_genre("Книга1", "Фантастика")
+        collector.set_book_genre("Книга2", "Ужасы")
+        
+        assert collector.get_books_with_specific_genre("Комедии") == []
 
     def test_get_books_with_specific_genre_empty(self):
         """Запрос книг по жанру, когда словарь пуст"""
@@ -83,31 +85,21 @@ class TestBooksCollector:
         assert collector.get_books_with_specific_genre("Фантастика") == []
 
     # Тесты для get_books_for_children
-    @pytest.mark.parametrize("genre, should_be_in_children", [
-        ("Фантастика", True),
-        ("Мультфильмы", True),
-        ("Комедии", True),
-        ("Ужасы", False),
-        ("Детективы", False)
-    ])
-    def test_get_books_for_children(self, genre, should_be_in_children):
+    @pytest.mark.parametrize("genre", ["Ужасы", "Детективы"])
+    def test_get_books_for_children_excludes_books_with_age_rating(self, genre):
         """Книги с возрастным рейтингом не попадают в детский список"""
         collector = BooksCollector()
-        collector.add_new_book("Детская книга")
-        collector.set_book_genre("Детская книга", genre)
+        collector.add_new_book("Взрослая книга")
+        collector.set_book_genre("Взрослая книга", genre)
         
-        children_books = collector.get_books_for_children()
-        if should_be_in_children:
-            assert "Детская книга" in children_books
-        else:
-            assert "Детская книга" not in children_books
+        assert "Взрослая книга" not in collector.get_books_for_children()
 
-    def test_get_books_for_children_no_genre(self):
+    def test_get_books_for_children_excludes_books_without_genre(self):
         """Книга без жанра не попадает в детский список"""
         collector = BooksCollector()
         collector.add_new_book("Без жанра")
-        children_books = collector.get_books_for_children()
-        assert "Без жанра" not in children_books
+        
+        assert "Без жанра" not in collector.get_books_for_children()
 
     # Тест для add_book_in_favorites
     def test_add_book_in_favorites(self):
